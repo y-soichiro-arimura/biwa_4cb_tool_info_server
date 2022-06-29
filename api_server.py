@@ -7,60 +7,10 @@ import json
 import urllib.request
 import uvicorn
 
-
-aoc_count_api_info = {
-    "host": "localhost",
-    "port": 8080}
-
-tool_info_plc_api_info = {
-    "host": "192.168.0.144",
-    "port": 30000}
-
-def api_auto_ope_cycle_count(
-        host=aoc_count_api_info["host"], 
-        port=aoc_count_api_info["port"]):
-    url = "http://{}:{}/auto_ope_cycle_count".format(host, port)
-    req = urllib.request.Request(url)
-    try:
-        with urllib.request.urlopen(req, timeout=60) as res:
-            body = res.read()
-        data = json.loads(body)
-        data = json.loads(data)
-    except Exception as e:
-        print(e)
-        data = list()
-    return data
-
-def api_machine_list(
-        host=aoc_count_api_info["host"], 
-        port=aoc_count_api_info["port"]):
-    url = "http://{}:{}/machine_list".format(host, port)
-    req = urllib.request.Request(url)
-    try:
-        with urllib.request.urlopen(req, timeout=60) as res:
-            body = res.read()
-        data = json.loads(body)
-        data = json.loads(data)
-    except Exception as e:
-        print(e)
-        data = list()
-    return data
-
-def api_tool_info_plc(
-        machine,
-        host=tool_info_plc_api_info["host"], 
-        port=tool_info_plc_api_info["port"],):
-    url = "http://{}:{}/tool_status/{}".format(host, port, machine)
-    req = urllib.request.Request(url)
-    try:
-        with urllib.request.urlopen(req, timeout=60) as res:
-            body = res.read()
-        data = json.loads(body)
-        data = json.loads(data)
-    except Exception as e:
-        print(e)
-        data = list()
-    return data
+from utils.client import (
+    api_auto_ope_cycle_count,
+    api_machine_list,
+    api_tool_info_plc)
 
 
 class ToolStatusHandler():
@@ -78,13 +28,28 @@ class ToolStatusHandler():
             [(m, {"status": None, "timestamp": time_stamp}) for m in machine_list])
         return None
     
+    def machine_ip_list(self):
+        return list(self.tool_status.keys())
+    
+    def is_valid_machine_ip(self, machine):
+        if machine in self.tool_status.keys():
+            return True
+        else:
+            False
+    
     def get_tool_status(self, machine=None):
         if machine:
-            if not machine in self.tool_status.keys():
+            if not self.is_valid_machine_ip(machine=machine):
                 return False
             return {machine: self.tool_status[machine]}
         else:
             return self.tool_status
+    
+    def force_update(self, machine):
+        if not self.is_valid_machine_ip(machine=machine):
+            return False
+        self.tool_status[machine]["status"] = api_tool_info_plc(machine=machine)[machine]
+        return True
     
     def update(self):
         # check target machine ---
@@ -97,13 +62,13 @@ class ToolStatusHandler():
                 target.append(k)
         # update ---
         for m in target:
-            self.tool_status[m]["status"] = api_tool_info_plc(machine=m) # format: TBD
+            self.tool_status[m]["status"] = api_tool_info_plc(machine=m)[m] # format: TBD
             self.tool_status[m]["timestamp"] = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         return None
 
-
-app = FastAPI()
+print("start: tool_status_handler")
 tsh = ToolStatusHandler()
+app = FastAPI()
 
 @app.get('/server_status')
 def server_status():
@@ -118,18 +83,30 @@ def update():
         content={'status': 'done'}, 
         status_code=status.HTTP_200_OK)
 
+@app.get('/machine_ip_list')
+def machine_ip_list():
+    ret = {"machine_ip_list": tsh.machine_ip_list()}
+    return JSONResponse(
+        content=ret, 
+        status_code=status.HTTP_200_OK)
+
+@app.get('/force_update/{machine}')
+def force_update(machine):
+    ret = tsh.force_update(machine=machine)
+    return JSONResponse(
+        content={'force_update_status': ret}, 
+        status_code=status.HTTP_200_OK)
+
 @app.get('/tool_status')
 def tool_status():
-    ret = tsh.tool_status
     return JSONResponse(
-        content={'tool_status': ret}, 
+        content=tsh.tool_status, 
         status_code=status.HTTP_200_OK)
 
 @app.get('/tool_status/{machine}')
 def tool_status(machine):
-    ret = tsh.get_tool_status(machine=machine)
     return JSONResponse(
-        content={'tool_status': ret}, 
+        content=tsh.get_tool_status(machine=machine), 
         status_code=status.HTTP_200_OK)
 
 @app.exception_handler(RequestValidationError)
@@ -148,6 +125,7 @@ async def http_exception_handler(request: Request, exc):
 host = "192.168.0.10"
 port = 50000
 
+print(f"server is working at {host}:{port}")
 uvicorn.run(
     app=app, 
     host=host, 
