@@ -58,11 +58,11 @@ class ToolStatusHandler():
         for k, v in auto_ope_cycle_count.items():
             if k == "last_access":
                 continue
-            if 0 < v["aoc_fin_count"]:
+            if (0 < v["aoc_fin_count"]) and self.is_valid_machine_ip(machine=k):
                 target.append(k)
         # update ---
         for m in target:
-            self.tool_status[m]["status"] = api_tool_info_plc(machine=m)[m] # format: TBD
+            self.tool_status[m]["status"] = api_tool_info_plc(machine=m)[m]
             self.tool_status[m]["timestamp"] = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         return None
 

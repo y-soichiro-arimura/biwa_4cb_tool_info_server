@@ -27,4 +27,5 @@ def test_api_tool_info_plc():
 
 if __name__ == '__main__':
     # test_api_auto_ope_cycle_count()
-    test_api_tool_info_plc()
+    test_api_machine_list()
+    # test_api_tool_info_plc()

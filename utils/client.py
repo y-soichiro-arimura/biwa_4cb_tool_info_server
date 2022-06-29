@@ -27,15 +27,15 @@ def api_auto_ope_cycle_count(
     return data
 
 def api_machine_list(
-        host=aoc_count_api_info["host"], 
-        port=aoc_count_api_info["port"]):
-    url = "http://{}:{}/machine_list".format(host, port)
+        host=tool_info_plc_api_info["host"], 
+        port=tool_info_plc_api_info["port"]):
+    url = "http://{}:{}/machines".format(host, port)
     req = urllib.request.Request(url)
     try:
         with urllib.request.urlopen(req, timeout=60) as res:
             body = res.read()
         data = json.loads(body)
-        data = json.loads(data)
+        data = data["machine_list"]
     except Exception as e:
         print(e)
         data = list()
@@ -53,5 +53,5 @@ def api_tool_info_plc(
         data = json.loads(body)
     except Exception as e:
         print(e)
-        data = list()
+        data = {machine: "not available from tool_into_plc"}
     return data
