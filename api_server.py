@@ -7,6 +7,7 @@ import json
 import urllib.request
 import uvicorn
 
+from config.config import ServerConf
 from utils.client import (
     api_auto_ope_cycle_count,
     api_machine_list,
@@ -122,8 +123,8 @@ async def http_exception_handler(request: Request, exc):
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
 
-host = "192.168.0.10"
-port = 50000
+host = ServerConf.HOST
+port = ServerConf.PORT
 
 print(f"server is working at {host}:{port}")
 uvicorn.run(

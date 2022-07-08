@@ -3,6 +3,11 @@ import urllib.request
 import json
 import time
 import datetime
+import sys
+
+sys.path.append('..')
+
+from config.config import ServerConf
 
 PATH = "./api_server_info.json"
 
@@ -24,9 +29,12 @@ def api_update(host, port, timeout=int(60), is_test=int(0)):
 UPDATE_INTERVAL = 20
 
 def main():
-    dict_api_server_info = get_dict_from_jsonf(path=PATH)
-    host = dict_api_server_info["host"]
-    port = dict_api_server_info["port"]
+    # dict_api_server_info = get_dict_from_jsonf(path=PATH)
+    # host = dict_api_server_info["host"]
+    # port = dict_api_server_info["port"]
+
+    host = ServerConf.HOST
+    port = ServerConf.PORT
 
     dt_update = datetime.datetime.now() + datetime.timedelta(seconds=UPDATE_INTERVAL)
     while True:
