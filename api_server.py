@@ -33,7 +33,7 @@ class ToolStatusHandler():
         return list(self.tool_status.keys())
     
     def timestamps(self):
-        return dict([(m, v["timestamp"]) for m, v in self.tool_status])
+        return dict([(m, v["timestamp"]) for m, v in self.tool_status.items()])
     
     def is_valid_machine_ip(self, machine):
         if machine in self.tool_status.keys():
