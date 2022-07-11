@@ -32,6 +32,9 @@ class ToolStatusHandler():
     def machine_ip_list(self):
         return list(self.tool_status.keys())
     
+    def timestamps(self):
+        return dict([(m, v["timestamp"]) for m, v in self.tool_status])
+    
     def is_valid_machine_ip(self, machine):
         if machine in self.tool_status.keys():
             return True
@@ -108,6 +111,12 @@ def tool_status():
 def tool_status(machine):
     return JSONResponse(
         content=tsh.get_tool_status(machine=machine), 
+        status_code=status.HTTP_200_OK)
+
+@app.get('/timestamps')
+def timestamps():
+    return JSONResponse(
+        content=tsh.timestamps(), 
         status_code=status.HTTP_200_OK)
 
 @app.exception_handler(RequestValidationError)
