@@ -1,10 +1,7 @@
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError, HTTPException
-from typing import List, Dict, Optional
 import datetime
-import json
-import urllib.request
 import uvicorn
 
 from config.config import ServerConf
@@ -13,6 +10,8 @@ from utils.client import (
     api_machine_list,
     api_tool_info_plc)
 
+
+TIME_STAMP_KEY = "time_stamp"
 
 class ToolStatusHandler():
     '''
@@ -26,14 +25,14 @@ class ToolStatusHandler():
         machine_list = api_machine_list()
         time_stamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         self.tool_status = dict(
-            [(m, {"status": None, "timestamp": time_stamp}) for m in machine_list])
+            [(m, {"status": None, TIME_STAMP_KEY: time_stamp}) for m in machine_list])
         return None
     
     def machine_ip_list(self):
         return list(self.tool_status.keys())
     
-    def timestamps(self):
-        return dict([(m, v["timestamp"]) for m, v in self.tool_status.items()])
+    def time_stamp(self):
+        return dict([(m, v[TIME_STAMP_KEY]) for m, v in self.tool_status.items()])
     
     def is_valid_machine_ip(self, machine):
         if machine in self.tool_status.keys():
@@ -67,7 +66,7 @@ class ToolStatusHandler():
         # update ---
         for m in target:
             self.tool_status[m]["status"] = api_tool_info_plc(machine=m)[m]
-            self.tool_status[m]["timestamp"] = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            self.tool_status[m][TIME_STAMP_KEY] = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         return None
 
 print("start: tool_status_handler")
@@ -113,10 +112,10 @@ def tool_status(machine):
         content=tsh.get_tool_status(machine=machine), 
         status_code=status.HTTP_200_OK)
 
-@app.get('/timestamps')
+@app.get('/time_stamp')
 def timestamps():
     return JSONResponse(
-        content=tsh.timestamps(), 
+        content=tsh.time_stamp(), 
         status_code=status.HTTP_200_OK)
 
 @app.exception_handler(RequestValidationError)
